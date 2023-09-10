@@ -1,62 +1,88 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AIT</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Sharing</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
+<body>
+    <div>
+        <label for="location">Location:</label>
+        <input type="text" id="location" placeholder="Enter a location" />
+        <button onclick="geocodeLocation()">Find Location</button>
+    </div>
+    <div>
+        <button onclick="getUserLocation()">Get My Location</button>
+    </div>
+    <div id="map" style="height: 400px;"></div>
+    <button onclick="sendLocationToWhatsApp()">Send Location to WhatsApp</button>
 
-<!--
-creating the grid
+    <script>
+        var map = L.map("map").setView([48.8566, 2.3522], 15); // Initial coordinates
+        var marker = L.marker([0, 0]).addTo(map);
+        var newLatitude = 0;
+        var newLongitude = 0;
 
--->
-<div class="grid-container">
-  <div class="w3-jumbo w3-teal">
-    <i class="fa fa-home"> IAT</i>
-  </div>
+        // Add OpenStreetMap tile layer
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  <div class="d-flex flex-row-reverse">
-  <div class="p-2">
-  <div class="dropdown">
-  <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-  Menu
-  </button>
-  <ul class="dropdown-menu">
-  <li><a class="dropdown-item" href="#">About US</a></li>
-  <li><a class="dropdown-item" href="#">Academic</a></li>
-  <li><a class="dropdown-item" href="#">Mandate</a></li>
-  <li><a class="dropdown-item" href="#">Contact</a></li>
-  </ul>
-  </div>
-  </div>
-  </div>
-</div>
-<img src="iat.jpg" alt="IAT campus">
-    <!-- navigatgion bar picked from bootstrap
-    <nav class="navbar navbar-expand-sm bg-primary navbar-dark">
-  <ul class="navbar-nav">
-    <li class="nav-item active">
-      <a class="nav-link" href="#">Home</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#">About us</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#">Academics</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link disabled" href="#">Disabled</a>
-    </li>
-  </ul>
-</nav>
-    <h2>Institute of Accountancy Training</h2>
-    <p>Ministry of Finance, Accra, Ghana.</p>-->
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
-  </body>
+        function geocodeLocation() {
+            var locationInput = document.getElementById("location").value;
+
+            // Use OpenStreetMap's Nominatim geocoding service
+            var geocodeURL = "https://nominatim.openstreetmap.org/search?format=json&q=" + locationInput;
+
+            fetch(geocodeURL)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        // Extract coordinates from the geocoding response
+                        newLatitude = parseFloat(data[0].lat);
+                        newLongitude = parseFloat(data[0].lon);
+
+                        map.setView([newLatitude, newLongitude], 15);
+                        marker.setLatLng([newLatitude, newLongitude]);
+                        marker.bindPopup("Updated Marker Title").openPopup();
+                    } else {
+                        alert("Location not found.");
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Error geocoding location.");
+                });
+        }
+
+        function getUserLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    newLatitude = position.coords.latitude;
+                    newLongitude = position.coords.longitude;
+
+                    map.setView([newLatitude, newLongitude], 15);
+                    marker.setLatLng([newLatitude, newLongitude]);
+                    marker.bindPopup("My Location").openPopup();
+                }, function (error) {
+                    console.error("Error getting location: " + error.message);
+                    alert("Error getting your location. Please enable location services.");
+                });
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
+        function sendLocationToWhatsApp() {
+            var locationURL = "https://www.openstreetmap.org/?mlat=" + newLatitude + "&mlon=" + newLongitude;
+            var whatsappMessage = "Check out my location: " + locationURL;
+
+            var phoneNumber = "233591936564"; // Replace with the desired WhatsApp number
+
+            var whatsappURL = "https://api.whatsapp.com/send?phone=" + phoneNumber + "&text=" + encodeURIComponent(whatsappMessage);
+
+            window.open(whatsappURL);
+        }
+    </script>
+</body>
 </html>
