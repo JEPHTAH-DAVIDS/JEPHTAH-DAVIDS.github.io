@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Location Sharing</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/easy-autocomplete/1.3.5/easy-autocomplete.min.css">
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/easy-autocomplete/1.3.5/jquery.easy-autocomplete.min.js"></script>
 </head>
 <body>
     <div>
@@ -18,15 +21,52 @@
     </div>
     <div id="map" style="height: 400px;"></div>
     <button onclick="sendLocationToWhatsApp()">Send Location to WhatsApp</button>
+    <div>
+        <p id="distanceInfo">Distance: </p>
+        <p id="costInfo">Cost: </p>
+    </div>
 
     <script>
-        var map = L.map("map").setView([48.8566, 2.3522], 15); // Initial coordinates
-        var marker = L.marker([0, 0]).addTo(map);
+        var map = L.map("map").setView([5.56921, -0.21528], 15); // Initial coordinates
+        var marker = L.marker([0, 0], { draggable: true }).addTo(map); // Make the marker draggable
         var newLatitude = 0;
         var newLongitude = 0;
 
         // Add OpenStreetMap tile layer
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+        // Initialize EasyAutocomplete for location suggestions
+        var options = {
+            url: function(phrase) {
+                return "https://nominatim.openstreetmap.org/search?format=json&q=" + phrase;
+            },
+            getValue: "display_name",
+            list: {
+                match: {
+                    enabled: true
+                }
+            }
+        };
+
+        $("#location").easyAutocomplete(options);
+
+        // Event handler for when the marker is dragged
+        marker.on("dragend", function(event) {
+            var newLatLng = event.target.getLatLng();
+            newLatitude = newLatLng.lat;
+            newLongitude = newLatLng.lng;
+
+            // Update the input field with the new coordinates
+            document.getElementById("location").value = newLatitude + ", " + newLongitude;
+
+            // Calculate and display the distance
+            var initialCoordinates = [6.67267, -1.6661504]; // Initial coordinates
+            var distance = calculateDistance(initialCoordinates, [newLatitude, newLongitude]);
+            var cost = calculateCost(distance);
+
+            document.getElementById("distanceInfo").innerText = "Distance: " + distance.toFixed(2) + " miles";
+            document.getElementById("costInfo").innerText = "Cost: $" + cost.toFixed(2);
+        });
 
         function geocodeLocation() {
             var locationInput = document.getElementById("location").value;
@@ -45,6 +85,14 @@
                         map.setView([newLatitude, newLongitude], 15);
                         marker.setLatLng([newLatitude, newLongitude]);
                         marker.bindPopup("Updated Marker Title").openPopup();
+
+                        // Calculate and display the distance
+                        var initialCoordinates = [6.67267, -1.6661504]; // Initial coordinates
+                        var distance = calculateDistance(initialCoordinates, [newLatitude, newLongitude]);
+                        var cost = calculateCost(distance);
+
+                        document.getElementById("distanceInfo").innerText = "Distance: " + distance.toFixed(2) + " miles";
+                        document.getElementById("costInfo").innerText = "Cost: $" + cost.toFixed(2);
                     } else {
                         alert("Location not found.");
                     }
@@ -64,6 +112,14 @@
                     map.setView([newLatitude, newLongitude], 15);
                     marker.setLatLng([newLatitude, newLongitude]);
                     marker.bindPopup("My Location").openPopup();
+
+                    // Calculate and display the distance
+                    var initialCoordinates = [6.67267, -1.6661504]; // Initial coordinates
+                    var distance = calculateDistance(initialCoordinates, [newLatitude, newLongitude]);
+                    var cost = calculateCost(distance);
+
+                    document.getElementById("distanceInfo").innerText = "Distance: " + distance.toFixed(2) + " miles";
+                    document.getElementById("costInfo").innerText = "Cost: $" + cost.toFixed(2);
                 }, function (error) {
                     console.error("Error getting location: " + error.message);
                     alert("Error getting your location. Please enable location services.");
@@ -75,13 +131,53 @@
 
         function sendLocationToWhatsApp() {
             var locationURL = "https://www.openstreetmap.org/?mlat=" + newLatitude + "&mlon=" + newLongitude;
-            var whatsappMessage = "Check out my location: " + locationURL;
+            var distance = document.getElementById("distanceInfo").innerText;
+            var cost = document.getElementById("costInfo").innerText;
+            var whatsappMessage = "Location: " + locationURL + "\n" + distance + "\n" + cost;
 
             var phoneNumber = "233591936564"; // Replace with the desired WhatsApp number
 
             var whatsappURL = "https://api.whatsapp.com/send?phone=" + phoneNumber + "&text=" + encodeURIComponent(whatsappMessage);
 
             window.open(whatsappURL);
+        }
+
+        // Function to calculate the distance in miles using Haversine formula
+        function calculateDistance(coord1, coord2) {
+            var R = 3958.8; // Earth's radius in miles
+            var lat1 = coord1[0];
+            var lon1 = coord1[1];
+            var lat2 = coord2[0];
+            var lon2 = coord2[1];
+
+            var dLat = toRadians(lat2 - lat1);
+            var dLon = toRadians(lon2 - lon1);
+
+            var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        function toRadians(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        // Function to calculate cost based on distance
+        function calculateCost(distance) {
+            if (distance < 2) {
+                return 15;
+            } else if (distance >= 2 && distance < 4) {
+                return 25;
+            } else if (distance >= 4 && distance < 6) {
+                return 40;
+            } else {
+                // Handle distances greater than or equal to 6 miles
+                // You can add your own logic here if needed
+                return 0;
+            }
         }
     </script>
 </body>
