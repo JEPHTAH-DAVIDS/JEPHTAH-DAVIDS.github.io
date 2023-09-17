@@ -72,7 +72,7 @@
             var cost = calculateCost(distance);
 
             document.getElementById("distanceInfo").innerText = "Estimated distance from store: " + distance.toFixed(2) + " miles";
-            document.getElementById("costInfo").innerText = "Estimated Delivery Cost: $" + cost;
+            document.getElementById("costInfo").innerText = "Estimated Delivery Cost: " + cost;
         });
 
         function geocodeLocation() {
@@ -99,7 +99,7 @@
                         var cost = calculateCost(distance);
 
                         document.getElementById("distanceInfo").innerText = "Estimated Distance from store: " + distance.toFixed(2) + " miles";
-                        document.getElementById("costInfo").innerText = "Estimated Delivery Cost: $" + cost;
+                        document.getElementById("costInfo").innerText = "Estimated Delivery Cost: " + cost;
                     } else {
                         alert("Location not found.");
                     }
@@ -126,7 +126,7 @@
                     var cost = calculateCost(distance);
 
                     document.getElementById("distanceInfo").innerText = "Estimated Distance from store: " + distance.toFixed(2) + " miles";
-                    document.getElementById("costInfo").innerText = "Estimated Delivery Cost: $" + cost;
+                    document.getElementById("costInfo").innerText = "Estimated Delivery Cost: " + cost;
                 }, function (error) {
                     console.error("Error getting location: " + error.message);
                     alert("Error getting your location. Please enable location services.");
@@ -175,11 +175,11 @@
         // Function to calculate cost based on distance
         function calculateCost(distance) {
             if (distance < 2) {
-                return (15).toFixed(2);
+                return "₵" + (15).toFixed(2);
             } else if (distance >= 2 && distance < 4) {
-                return (25).toFixed(2);
+                return "₵" + (25).toFixed(2);
             } else if (distance >= 4 && distance < 6) {
-                return (40).toFixed(2);
+                return "₵" + (40).toFixed(2);
             } else {
                 // Handle distances greater than or equal to 6 miles
                 // You can add your own logic here if needed
